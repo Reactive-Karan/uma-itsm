@@ -173,21 +173,21 @@ export default function RequesterNotificationsPage() {
               <div
                 key={n.id}
                 className={cn(
-                  'flex items-start gap-4 px-5 py-4 transition-colors',
+                  'flex items-start gap-3 px-4 py-3.5 transition-colors',
                   n.read_at ? 'bg-white' : 'bg-blue-50/60',
                 )}
               >
                 {/* Unread dot */}
-                <div className="mt-1.5 shrink-0">
+                <div className="mt-2 shrink-0">
                   <div className={n.read_at ? 'h-2 w-2 rounded-full bg-transparent' : 'h-2 w-2 rounded-full bg-[#1E40AF]'} />
                 </div>
 
                 {/* Type icon */}
-                <span className="text-xl shrink-0 mt-0.5 leading-none">
+                <span className="text-lg shrink-0 mt-0.5 leading-none">
                   {TYPE_ICONS[n.notification_type] ?? TYPE_ICONS.default}
                 </span>
 
-                {/* Content */}
+                {/* Content — takes all remaining space */}
                 <div className="flex-1 min-w-0">
                   <p className={cn(
                     'text-sm leading-snug wrap-break-word',
@@ -196,28 +196,29 @@ export default function RequesterNotificationsPage() {
                     {n.subject}
                   </p>
                   <p className="text-xs text-slate-400 mt-1">{timeAgo(n.created_at)}</p>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0 mt-0.5">
-                  {n.ticket_id && (
-                    <Link
-                      href={`/requester/tickets/${n.ticket_id}`}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 hover:text-[#1E40AF] transition-colors"
-                    >
-                      <Ticket className="h-3.5 w-3.5" />
-                      View Ticket
-                    </Link>
-                  )}
-                  {!n.read_at && (
-                    <button
-                      onClick={() => markAsRead(n.id)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 text-xs text-slate-500 hover:bg-slate-50 hover:text-[#1E40AF] transition-colors"
-                    >
-                      <CheckCheck className="h-3.5 w-3.5" />
-                      Mark read
-                    </button>
-                  )}
+                  {/* Actions sit BELOW the text — never crowd the message */}
+                  <div className="flex items-center gap-2 mt-2">
+                    {n.ticket_id && (
+                      <Link
+                        href={`/requester/tickets/${n.ticket_id}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-50 hover:text-[#1E40AF] transition-colors"
+                      >
+                        <Ticket className="h-3 w-3 shrink-0" />
+                        View Ticket
+                      </Link>
+                    )}
+                    {!n.read_at && (
+                      <button
+                        type="button"
+                        onClick={() => markAsRead(n.id)}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-50 hover:text-[#1E40AF] transition-colors"
+                      >
+                        <CheckCheck className="h-3 w-3 shrink-0" />
+                        Mark read
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
