@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -58,35 +59,42 @@ export function UserProfileMenu() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="pb-1">
-          <p className="font-semibold text-slate-900 truncate">{profile.full_name}</p>
-          <p className="text-xs text-slate-500 font-normal truncate">{profile.email}</p>
-          <div className="mt-1.5">
-            <RoleBadge role={profile.role} size="sm" />
-          </div>
-        </DropdownMenuLabel>
+        {/* Base UI requires GroupLabel to live inside a Group */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="pb-1">
+            <p className="font-semibold text-slate-900 truncate">{profile.full_name}</p>
+            <p className="text-xs text-slate-500 font-normal truncate">{profile.email}</p>
+            <div className="mt-1.5">
+              <RoleBadge role={profile.role} size="sm" />
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
-          <User className="h-4 w-4 text-slate-400" />
-          My Profile
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
+            <User className="h-4 w-4 text-slate-400" />
+            My Profile
+          </DropdownMenuItem>
 
-        <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
-          <Settings className="h-4 w-4 text-slate-400" />
-          Settings
-        </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
+            <Settings className="h-4 w-4 text-slate-400" />
+            Settings
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,28 +1,36 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { listTickets } from '@/services/ticket.service'
+import { TicketCard } from '@/features/tickets/components/TicketCard'
 import { StatCard } from '@/components/dashboard/StatCard'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
-import {
-  Ticket,
-  CheckCircle2,
-  Clock,
-  PlusCircle,
-  ChevronRight,
-} from 'lucide-react'
-import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Ticket, CheckCircle2, Clock, PlusCircle, ChevronRight, ListFilter } from 'lucide-react'
+import Link from 'next/link'
+import type { TicketStatus } from '@/types/database.types'
 
 export const metadata = { title: 'My Tickets' }
 
-export default async function RequesterDashboardPage() {
-  const supabase = await createClient()
+const STATUS_TABS: { value: TicketStatus | 'all'; label: string }[] = [
+  { value: 'all',       label: 'All' },
+  { value: 'new',       label: 'New' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'pending_requester', label: 'Pending You' },
+  { value: 'resolved',  label: 'Resolved' },
+]
 
+interface PageProps {
+  searchParams: Promise<{ status?: string; page?: string }>
+}
+
+export default async function RequesterDashboardPage({ searchParams }: PageProps) {
+  const { status = 'all', page: pageStr = '1' } = await searchParams
+  const page = parseInt(pageStr, 10) || 1
+
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
@@ -31,20 +39,31 @@ export default async function RequesterDashboardPage() {
     .eq('auth_id', user.id)
     .single()
 
-  // Sprint 2+ will load real ticket data. Sprint 1 shows the skeleton layout.
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
 
+  // Fetch tickets (RLS ensures only this user's tickets are returned)
+  const [{ tickets, count }, { tickets: allTickets }] = await Promise.all([
+    listTickets(supabase, { status: status as TicketStatus | 'all', page, pageSize: 15 }),
+    listTickets(supabase, { status: 'all', pageSize: 500 }),
+  ])
+
+  // Compute summary stats
+  const openCount = allTickets.filter((t) => !['resolved', 'closed'].includes(t.status)).length
+  const resolvedThisMonth = allTickets.filter((t) => {
+    if (t.status !== 'resolved' && t.status !== 'closed') return false
+    const d = new Date(t.updated_at)
+    const now = new Date()
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  }).length
+  const pendingYou = allTickets.filter((t) => t.status === 'pending_requester').length
+
   return (
-    <div className="space-y-6 max-w-6xl">
-      {/* Page header */}
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Good morning, {firstName}
-          </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            Here&apos;s a summary of your IT and data service requests.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">Good morning, {firstName}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Here&apos;s a summary of your support requests.</p>
         </div>
         <Link
           href="/requester/tickets/new"
@@ -59,107 +78,118 @@ export default async function RequesterDashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Open Tickets"
-          value="—"
+          value={openCount}
           description="Awaiting resolution"
           icon={Ticket}
           iconColor="text-[#1E40AF]"
           iconBg="bg-[#EFF6FF]"
-          isLoading
+        />
+        <StatCard
+          label="Pending Your Input"
+          value={pendingYou}
+          description={pendingYou > 0 ? 'Action needed' : 'None waiting'}
+          icon={Clock}
+          iconColor={pendingYou > 0 ? 'text-amber-600' : 'text-slate-400'}
+          iconBg={pendingYou > 0 ? 'bg-amber-50' : 'bg-slate-50'}
         />
         <StatCard
           label="Resolved This Month"
-          value="—"
+          value={resolvedThisMonth}
           description="Last 30 days"
           icon={CheckCircle2}
           iconColor="text-green-600"
           iconBg="bg-green-50"
-          isLoading
         />
         <StatCard
-          label="Avg Resolution Time"
-          value="—"
-          description="Business hours"
-          icon={Clock}
-          iconColor="text-amber-600"
-          iconBg="bg-amber-50"
-          isLoading
-        />
-        <StatCard
-          label="SLA Compliance"
-          value="—"
-          description="Your tickets"
-          icon={CheckCircle2}
-          iconColor="text-blue-600"
-          iconBg="bg-blue-50"
-          isLoading
+          label="Total Submitted"
+          value={allTickets.length}
+          description="All time"
+          icon={ListFilter}
+          iconColor="text-slate-500"
+          iconBg="bg-slate-100"
         />
       </div>
 
-      {/* Recent tickets */}
+      {/* Ticket list */}
       <div className="bg-white rounded-xl border border-slate-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-900">Recent Tickets</h2>
-          <Link
-            href="/requester/tickets"
-            className="text-xs text-[#1E40AF] hover:underline font-medium flex items-center gap-0.5"
-          >
-            View all <ChevronRight className="h-3 w-3" />
-          </Link>
+        {/* Header + filter tabs */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 gap-4 flex-wrap">
+          <h2 className="font-semibold text-slate-900">My Tickets</h2>
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+            {STATUS_TABS.map((tab) => (
+              <Link
+                key={tab.value}
+                href={`/requester/dashboard?status=${tab.value}`}
+                className={cn(
+                  'px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+                  status === tab.value
+                    ? 'bg-[#1E40AF] text-white'
+                    : 'text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Ticket list skeleton — will be replaced with real data in Sprint 2 */}
-        <div className="divide-y divide-slate-100">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-5 py-4 flex items-center gap-4">
-              <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-5 w-16 rounded-full" />
-                <Skeleton className="h-5 w-12 rounded-full" />
-              </div>
+        {/* Ticket list */}
+        {tickets.length === 0 ? (
+          <div className="py-12 text-center">
+            <Ticket className="h-10 w-10 text-slate-300 mx-auto" />
+            <p className="text-slate-500 text-sm mt-3 font-medium">
+              {status === 'all' ? 'No tickets yet' : `No ${status.replace('_', ' ')} tickets`}
+            </p>
+            {status === 'all' && (
+              <>
+                <p className="text-slate-400 text-xs mt-1">Submit your first support request to get started.</p>
+                <Link
+                  href="/requester/tickets/new"
+                  className={cn(buttonVariants({ size: 'sm' }), 'mt-4 bg-[#1E40AF] hover:bg-[#1e3a8a]')}
+                >
+                  Submit a Ticket
+                </Link>
+              </>
+            )}
+          </div>
+        ) : (
+          <div>
+            {tickets.map((ticket) => (
+              <TicketCard
+                key={ticket.id}
+                ticket={ticket}
+                href={`/requester/tickets/${ticket.id}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {count > 15 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
+            <p className="text-xs text-slate-500">
+              Showing {(page - 1) * 15 + 1}–{Math.min(page * 15, count)} of {count} tickets
+            </p>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <Link
+                  href={`/requester/dashboard?status=${status}&page=${page - 1}`}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                >
+                  Previous
+                </Link>
+              )}
+              {page * 15 < count && (
+                <Link
+                  href={`/requester/dashboard?status=${status}&page=${page + 1}`}
+                  className={cn(buttonVariants({ size: 'sm' }), 'bg-[#1E40AF] hover:bg-[#1e3a8a]')}
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
             </div>
-          ))}
-        </div>
-
-        {/* Empty state (shown once data loads with zero tickets) */}
-        <div className="hidden px-5 py-12 text-center">
-          <Ticket className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-slate-500 text-sm mt-3 font-medium">No tickets yet</p>
-          <p className="text-slate-400 text-xs mt-1">
-            Submit your first IT or data service request to get started.
-          </p>
-          <Link
-            href="/requester/tickets/new"
-            className={cn(buttonVariants({ size: 'sm' }), 'mt-4 bg-[#1E40AF] hover:bg-[#1e3a8a]')}
-          >
-            Submit a Ticket
-          </Link>
-        </div>
-      </div>
-
-      {/* Status guide */}
-      <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Ticket Status Guide</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {[
-            { status: 'New', className: 'status-new', desc: 'Awaiting pickup' },
-            { status: 'Acknowledged', className: 'status-acknowledged', desc: 'Team confirmed' },
-            { status: 'In Progress', className: 'status-in_progress', desc: 'Being worked on' },
-            { status: 'Pending You', className: 'status-pending_requester', desc: 'Needs your input' },
-            { status: 'Escalated', className: 'status-escalated', desc: 'Manager involved' },
-            { status: 'Resolved', className: 'status-resolved', desc: 'Work completed' },
-          ].map((item) => (
-            <div key={item.status} className="text-center">
-              <Badge variant="outline" className={`text-xs ${item.className} w-full justify-center`}>
-                {item.status}
-              </Badge>
-              <p className="text-[10px] text-slate-400 mt-1">{item.desc}</p>
-            </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
