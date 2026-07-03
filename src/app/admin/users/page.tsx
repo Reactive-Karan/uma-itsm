@@ -27,21 +27,37 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
   // so no service role key is needed here.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
   if (!user) redirect('/login')
 
   let query = supabase
     .from('users')
-    .select('*, region:regions(name, code), department:departments(name, code)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * pageSize, page * pageSize - 1)
 
   if (role) query = query.eq('role', role as Database['public']['Enums']['user_role'])
   if (region_id) query = query.eq('region_id', region_id)
 
-  const [{ data: users, count }, { data: regions }] = await Promise.all([
+  const [{ data: usersRaw, count }, { data: allRegions }, { data: allDepts }] = await Promise.all([
     query,
-    supabase.from('regions').select('id, name, code').eq('is_active', true).order('name'),
+    supabase.from('regions').select('id, name, code').order('name'),
+    supabase.from('departments').select('id, name, code').order('name'),
   ])
+
+  // Manually join region and department data — avoids PostgREST schema cache dependency
+  const users = usersRaw?.map((u) => ({
+    ...u,
+    region: allRegions?.find((r) => r.id === u.region_id) ?? null,
+    department: allDepts?.find((d) => d.id === u.department_id) ?? null,
+  }))
+
+  // Active regions for the filter dropdown — fetch separately with is_active filter
+  const { data: regions } = await supabase
+    .from('regions')
+    .select('id, name, code')
+    .eq('is_active', true)
+    .order('name')
 
   const activeCount = users?.filter((u) => u.is_active).length ?? 0
   const inactiveCount = (users?.length ?? 0) - activeCount
