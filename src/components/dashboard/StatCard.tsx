@@ -37,7 +37,7 @@ export function StatCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide truncate">{label}</p>
 
         {isLoading ? (
           <>
@@ -50,7 +50,7 @@ export function StatCard({
               {value ?? '—'}
             </p>
             {description && (
-              <p className="text-xs text-slate-500 mt-1">{description}</p>
+              <p className="text-xs text-slate-500 mt-1 truncate">{description}</p>
             )}
             {trend && (
               <p

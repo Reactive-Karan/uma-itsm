@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return ApiResponse.badRequest(parsed.error.issues[0]?.message ?? 'Validation failed.')
 
   // Service client to look up auth.users by email
-  const serviceSupabase = await createServiceClient()
+  const serviceSupabase = createServiceClient()
 
   const { data: authUsers } = await serviceSupabase.auth.admin.listUsers()
   const authUser = authUsers?.users?.find((u) => u.email === parsed.data.email)

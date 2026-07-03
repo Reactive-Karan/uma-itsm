@@ -15,11 +15,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { LogOut, Settings, User } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
+import type { UserRole } from '@/types/user.types'
+
+const PROFILE_PATH_BY_ROLE: Record<UserRole, string> = {
+  requester: '/requester/profile',
+  dept_user: '/dept-user/profile',
+  manager: '/manager/profile',
+  super_admin: '/admin/profile',
+}
 
 export function UserProfileMenu() {
   const router = useRouter()
   const profile = useSessionStore((s) => s.profile)
+  const profilePath = profile ? PROFILE_PATH_BY_ROLE[profile.role] : '/'
 
   const initials = profile?.full_name
     ? profile.full_name
@@ -74,14 +83,12 @@ export function UserProfileMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
+          <DropdownMenuItem
+            onClick={() => router.push(profilePath)}
+            className="cursor-pointer gap-2 text-slate-700"
+          >
             <User className="h-4 w-4 text-slate-400" />
             My Profile
-          </DropdownMenuItem>
-
-          <DropdownMenuItem className="cursor-pointer gap-2 text-slate-700">
-            <Settings className="h-4 w-4 text-slate-400" />
-            Settings
           </DropdownMenuItem>
         </DropdownMenuGroup>
 

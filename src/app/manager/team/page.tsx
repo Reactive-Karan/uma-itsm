@@ -95,24 +95,24 @@ export default async function ManagerTeamPage() {
                   <div key={member.id} className="px-5 py-4">
                     <div className="flex items-start gap-4">
                       {/* Avatar */}
-                      <div className="h-9 w-9 rounded-full bg-[#1E40AF] flex items-center justify-center flex-shrink-0">
+                      <div className="h-9 w-9 rounded-full bg-[#1E40AF] flex items-center justify-center shrink-0">
                         <span className="text-white text-xs font-semibold">{initials}</span>
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-slate-900">{member.full_name}</p>
+                          <p className="text-sm font-semibold text-slate-900 truncate max-w-[200px]">{member.full_name}</p>
                           {member.is_ooo && (
-                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">
+                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0">
                               OOO{member.ooo_end_date ? ` until ${member.ooo_end_date}` : ''}
                             </Badge>
                           )}
                           {!member.is_active && (
-                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px]">Inactive</Badge>
+                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px] shrink-0">Inactive</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400">{member.email}</p>
+                        <p className="text-xs text-slate-400 truncate">{member.email}</p>
 
                         {/* Ticket mini-list */}
                         {tickets.length > 0 ? (
@@ -133,16 +133,18 @@ export default async function ManagerTeamPage() {
                       </div>
 
                       {/* Stats */}
-                      <div className="flex-shrink-0 text-right space-y-1">
+                      <div className="shrink-0 text-right space-y-1 min-w-[52px]">
                         <p className="text-lg font-bold text-slate-900">{tickets.length}</p>
                         <p className="text-[10px] text-slate-400">open</p>
                         {overdue.length > 0 && (
-                          <div className="flex items-center gap-1 text-[10px] text-red-600 font-medium">
-                            <Clock className="h-3 w-3" />{overdue.length} overdue
-                          </div>
+                          <p className="text-[10px] text-red-600 font-medium whitespace-nowrap">
+                            {overdue.length} overdue
+                          </p>
                         )}
                         {escalated.length > 0 && (
-                          <p className="text-[10px] text-red-600 font-bold">{escalated.length} escalated</p>
+                          <p className="text-[10px] text-red-600 font-bold whitespace-nowrap">
+                            {escalated.length} escalated
+                          </p>
                         )}
                       </div>
                     </div>

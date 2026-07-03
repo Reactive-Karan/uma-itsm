@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
-  const supabase = await createServiceClient()
+  const supabase = createServiceClient()
   const result = await autoCloseResolvedTickets(supabase)
 
   await supabase

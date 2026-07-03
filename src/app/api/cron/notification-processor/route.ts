@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
-  const supabase = await createServiceClient()
+  const supabase = createServiceClient()
   const started = Date.now()
 
   // Fetch pending + retryable notifications

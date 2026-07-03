@@ -5,6 +5,15 @@ import Link from 'next/link'
 import { Bell, CheckCheck, Ticket, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@/lib/ticket/sla'
+import { useSessionStore } from '@/stores/session.store'
+import type { UserRole } from '@/types/user.types'
+
+const TICKET_PATH_BY_ROLE: Record<UserRole, string> = {
+  requester: '/requester/tickets',
+  dept_user: '/dept-user/tickets',
+  manager: '/dept-user/tickets',
+  super_admin: '/dept-user/tickets',
+}
 
 interface Notification {
   id: string
@@ -31,6 +40,8 @@ const TYPE_ICONS: Record<string, string> = {
 }
 
 export function NotificationInbox() {
+  const role = useSessionStore((s) => s.profile?.role ?? 'requester')
+  const ticketBasePath = TICKET_PATH_BY_ROLE[role]
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -163,28 +174,31 @@ export function NotificationInbox() {
             {notifications.map((n) => (
               <div
                 key={n.id}
-                role="button"
-                tabIndex={0}
                 className={cn(
-                  'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50',
-                  n.read_at ? '' : 'bg-blue-50 hover:bg-blue-50/80',
+                  'flex items-start gap-3 px-4 py-3 transition-colors',
+                  n.read_at ? '' : 'bg-blue-50',
                 )}
-                onClick={() => { if (!n.read_at) markAsRead(n.id) }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!n.read_at) markAsRead(n.id) } }}
               >
-                <span className="text-lg shrink-0 mt-0.5">
-                  {TYPE_ICONS[n.notification_type] ?? TYPE_ICONS.default}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-xs leading-snug wrap-break-word', n.read_at ? 'text-slate-700' : 'font-semibold text-slate-900')}>
-                    {n.subject}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(n.created_at)}</p>
-                </div>
+                {/* Mark-as-read button wraps icon + text */}
+                <button
+                  type="button"
+                  className="flex items-start gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                  onClick={() => { if (!n.read_at) markAsRead(n.id) }}
+                  disabled={!!n.read_at}
+                >
+                  <span className="text-lg shrink-0 mt-0.5">
+                    {TYPE_ICONS[n.notification_type] ?? TYPE_ICONS.default}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('text-xs leading-snug wrap-break-word', n.read_at ? 'text-slate-700' : 'font-semibold text-slate-900')}>
+                      {n.subject}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(n.created_at)}</p>
+                  </div>
+                </button>
                 {n.ticket_id && (
                   <Link
-                    href={`/requester/tickets/${n.ticket_id}`}
-                    onClick={(e) => e.stopPropagation()}
+                    href={`${ticketBasePath}/${n.ticket_id}`}
                     className="shrink-0 mt-0.5"
                   >
                     <Ticket className="h-3.5 w-3.5 text-slate-400 hover:text-[#1E40AF]" />

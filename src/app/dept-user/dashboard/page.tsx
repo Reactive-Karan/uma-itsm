@@ -7,7 +7,7 @@ import { AcknowledgeButton } from '@/features/tickets/components/AcknowledgeButt
 import { slaCountdown } from '@/lib/ticket/sla'
 import { cn } from '@/lib/utils'
 import {
-  Inbox, CheckCircle2, AlertTriangle, Clock,
+  Inbox, CheckCircle2, AlertTriangle,
   ChevronRight, Timer, Flame,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -25,12 +25,12 @@ const STATUS_TABS: { value: TicketStatus | 'all'; label: string }[] = [
 ]
 
 interface PageProps {
-  searchParams: Promise<{ status?: string; page?: string }>
+  readonly searchParams: Promise<{ status?: string; page?: string }>
 }
 
 export default async function DeptUserDashboardPage({ searchParams }: PageProps) {
   const { status = 'all', page: pageStr = '1' } = await searchParams
-  const page = parseInt(pageStr, 10) || 1
+  const page = Number.parseInt(pageStr, 10) || 1
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -94,10 +94,38 @@ export default async function DeptUserDashboardPage({ searchParams }: PageProps)
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Open Assignments" value={openCount} description="Needs attention" icon={Inbox} iconColor="text-[#1E40AF]" iconBg="bg-[#EFF6FF]" />
-        <StatCard label="Needs Acknowledge" value={newCount} description={newCount > 0 ? 'Action required' : 'All clear'} icon={CheckCircle2} iconColor={newCount > 0 ? 'text-amber-600' : 'text-green-600'} iconBg={newCount > 0 ? 'bg-amber-50' : 'bg-green-50'} />
-        <StatCard label="SLA Overdue" value={overdueCount} description={overdueCount > 0 ? 'Immediate action' : 'All on track'} icon={AlertTriangle} iconColor={overdueCount > 0 ? 'text-red-600' : 'text-slate-400'} iconBg={overdueCount > 0 ? 'bg-red-50' : 'bg-slate-50'} />
-        <StatCard label="Resolved Today" value={resolvedToday} description="This calendar day" icon={CheckCircle2} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
+        <StatCard
+          label="Open"
+          value={openCount}
+          description="Needs attention"
+          icon={Inbox}
+          iconColor="text-[#1E40AF]"
+          iconBg="bg-[#EFF6FF]"
+        />
+        <StatCard
+          label="To Acknowledge"
+          value={newCount}
+          description={newCount > 0 ? 'Action required' : 'All clear'}
+          icon={CheckCircle2}
+          iconColor={newCount > 0 ? 'text-amber-600' : 'text-green-600'}
+          iconBg={newCount > 0 ? 'bg-amber-50' : 'bg-green-50'}
+        />
+        <StatCard
+          label="SLA Overdue"
+          value={overdueCount}
+          description={overdueCount > 0 ? 'Needs action' : 'All on track'}
+          icon={AlertTriangle}
+          iconColor={overdueCount > 0 ? 'text-red-600' : 'text-slate-400'}
+          iconBg={overdueCount > 0 ? 'bg-red-50' : 'bg-slate-50'}
+        />
+        <StatCard
+          label="Resolved Today"
+          value={resolvedToday}
+          description="This calendar day"
+          icon={CheckCircle2}
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-50"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -195,12 +223,15 @@ export default async function DeptUserDashboardPage({ searchParams }: PageProps)
               <div className="divide-y divide-amber-100">
                 {myTickets.filter((t) => t.status === 'new').slice(0, 3).map((t) => {
                   const sla = t.sla_ack_deadline ? slaCountdown(new Date(t.sla_ack_deadline)) : null
+                  let slaColor = 'text-slate-500'
+                  if (sla?.isBreached) slaColor = 'text-red-600'
+                  else if (sla?.isWarning) slaColor = 'text-amber-600'
                   return (
                     <div key={t.id} className="px-4 py-3">
                       <p className="text-xs font-mono text-slate-400">{t.ticket_number}</p>
                       <p className="text-sm font-medium text-slate-800 truncate mb-1.5">{t.title}</p>
                       {sla && (
-                        <p className={cn('text-xs font-medium mb-2', sla.isBreached ? 'text-red-600' : sla.isWarning ? 'text-amber-600' : 'text-slate-500')}>
+                        <p className={cn('text-xs font-medium mb-2', slaColor)}>
                           {sla.label}
                         </p>
                       )}
