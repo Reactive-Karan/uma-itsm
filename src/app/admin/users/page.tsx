@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RoleBadge } from '@/features/users/components/RoleBadge'
 import { Badge } from '@/components/ui/badge'
@@ -7,22 +7,30 @@ import { cn } from '@/lib/utils'
 import { Users, UserCheck, UserX, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
 import type { UserRole } from '@/types/user.types'
+import type { Database } from '@/types/database.types'
 import { RegionFilter } from './RegionFilter'
 
 export const metadata = { title: 'User Management' }
 
 interface PageProps {
-  searchParams: Promise<{ role?: string; region_id?: string; page?: string }>
+  readonly searchParams: Promise<{ role?: string; region_id?: string; page?: string }>
 }
 
 export default async function UserManagementPage({ searchParams }: PageProps) {
   const { role, region_id, page: pageStr = '1' } = await searchParams
-  const page = parseInt(pageStr, 10) || 1
+  const page = Number.parseInt(pageStr, 10) || 1
   const pageSize = 30
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Auth check with the SSR client (respects the user session)
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) redirect('/login')
+
+  // Use the service client for data queries — the users SELECT policy that grants
+  // super_admin visibility over all rows is defined in seed-demo.sql and may not
+  // be present in every environment. The service client bypasses RLS so the admin
+  // always sees the full user list regardless of migration state.
+  const supabase = createServiceClient()
 
   let query = supabase
     .from('users')
@@ -30,7 +38,7 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
     .order('created_at', { ascending: false })
     .range((page - 1) * pageSize, page * pageSize - 1)
 
-  if (role) query = query.eq('role', role as import('@/types/database.types').UserRole)
+  if (role) query = query.eq('role', role as Database['public']['Enums']['user_role'])
   if (region_id) query = query.eq('region_id', region_id)
 
   const [{ data: users, count }, { data: regions }] = await Promise.all([
@@ -97,7 +105,7 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
           {ROLE_TABS.map((tab) => (
             <Link
               key={tab.value}
-              href={`/admin/users?${tab.value ? `role=${tab.value}` : ''}`}
+              href={tab.value ? `/admin/users?role=${tab.value}` : '/admin/users'}
               className={cn(
                 'px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
                 role === tab.value || (!role && !tab.value)
@@ -112,12 +120,7 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
           <RegionFilter regions={regions ?? []} currentRegionId={region_id} />
         </div>
 
-        {!users?.length ? (
-          <div className="py-12 text-center">
-            <Users className="h-10 w-10 text-slate-300 mx-auto" />
-            <p className="text-slate-500 text-sm mt-3">No users found.</p>
-          </div>
-        ) : (
+        {users?.length ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -173,6 +176,11 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
                 })}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <Users className="h-10 w-10 text-slate-300 mx-auto" />
+            <p className="text-slate-500 text-sm mt-3">No users found.</p>
           </div>
         )}
 

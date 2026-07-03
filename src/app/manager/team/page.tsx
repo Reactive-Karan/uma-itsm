@@ -50,20 +50,20 @@ export default async function ManagerTeamPage() {
         </p>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Summary stats — compact 3-col that works on every screen width */}
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Team Members', value: teamMembers?.length ?? 0, icon: Users, color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]' },
+          { label: 'Members', value: teamMembers?.length ?? 0, icon: Users, color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]' },
           { label: 'Available', value: (teamMembers ?? []).filter((m) => !m.is_ooo && m.is_active).length, icon: UserCheck, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Out of Office', value: (teamMembers ?? []).filter((m) => m.is_ooo).length, icon: UserX, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'OOO', value: (teamMembers ?? []).filter((m) => m.is_ooo).length, icon: UserX, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-lg ${s.bg} flex items-center justify-center`}>
-              <s.icon className={`h-5 w-5 ${s.color}`} />
+          <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-3 flex flex-col items-center gap-2 text-center">
+            <div className={`h-9 w-9 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}>
+              <s.icon className={`h-4.5 w-4.5 ${s.color}`} />
             </div>
             <div>
-              <p className="text-xs text-slate-500">{s.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
+              <p className="text-[11px] font-semibold text-slate-500 leading-tight">{s.label}</p>
+              <p className="text-xl font-bold text-slate-900">{s.value}</p>
             </div>
           </div>
         ))}
@@ -88,8 +88,8 @@ export default async function ManagerTeamPage() {
                 const initials = member.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 
                 return (
-                  <div key={member.id} className="px-5 py-4">
-                    <div className="flex items-start gap-4">
+                  <div key={member.id} className="px-4 py-4">
+                    <div className="flex items-start gap-3">
                       {/* Avatar */}
                       <div className="h-9 w-9 rounded-full bg-[#1E40AF] flex items-center justify-center shrink-0">
                         <span className="text-white text-xs font-semibold">{initials}</span>
@@ -97,18 +97,16 @@ export default async function ManagerTeamPage() {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-slate-900 wrap-break-word">{member.full_name}</p>
+                        <div className="flex items-start gap-1.5 flex-wrap">
+                          <p className="text-sm font-semibold text-slate-900 leading-tight">{member.full_name}</p>
                           {member.is_ooo && (
-                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0">
-                              OOO{member.ooo_end_date ? ` until ${member.ooo_end_date}` : ''}
-                            </Badge>
+                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0 mt-0.5">OOO</Badge>
                           )}
                           {!member.is_active && (
-                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px] shrink-0">Inactive</Badge>
+                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px] shrink-0 mt-0.5">Inactive</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 break-all">{member.email}</p>
+                        <p className="text-xs text-slate-400 mt-0.5 break-all leading-snug">{member.email}</p>
 
                         {/* Ticket mini-list */}
                         {tickets.length > 0 ? (

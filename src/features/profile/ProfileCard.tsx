@@ -28,18 +28,19 @@ export function ProfileCard({ profile, regionName, departmentName }: ProfileCard
 
       {/* Avatar + name */}
       <div className="px-6 pb-6">
-        <div className="-mt-10 mb-4 flex items-end gap-4">
+        {/* Avatar floats up over the banner — badge stays in the white zone */}
+        <div className="-mt-9 mb-3">
           <div className="h-16 w-16 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center">
             <div className="h-full w-full rounded-xl bg-[#1E40AF] flex items-center justify-center">
               <span className="text-white text-xl font-bold">{initials}</span>
             </div>
           </div>
-          <div className="pb-1">
-            <RoleBadge role={profile.role} size="sm" />
-          </div>
         </div>
 
-        <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          <h2 className="text-xl font-bold text-slate-900">{profile.full_name}</h2>
+          <RoleBadge role={profile.role} size="sm" />
+        </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex items-center gap-2.5 text-sm text-slate-600">
