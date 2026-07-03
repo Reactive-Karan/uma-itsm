@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RoleBadge } from '@/features/users/components/RoleBadge'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,7 @@ import type { Database } from '@/types/database.types'
 import { RegionFilter } from './RegionFilter'
 
 export const metadata = { title: 'User Management' }
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   readonly searchParams: Promise<{ role?: string; region_id?: string; page?: string }>
@@ -21,16 +22,12 @@ export default async function UserManagementPage({ searchParams }: PageProps) {
   const page = Number.parseInt(pageStr, 10) || 1
   const pageSize = 30
 
-  // Auth check with the SSR client (respects the user session)
-  const authClient = await createClient()
-  const { data: { user } } = await authClient.auth.getUser()
+  // Single SSR client — auth check + data queries all use the user's session.
+  // The users_select_own RLS policy grants super_admin full visibility over all rows,
+  // so no service role key is needed here.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-
-  // Use the service client for data queries — the users SELECT policy that grants
-  // super_admin visibility over all rows is defined in seed-demo.sql and may not
-  // be present in every environment. The service client bypasses RLS so the admin
-  // always sees the full user list regardless of migration state.
-  const supabase = createServiceClient()
 
   let query = supabase
     .from('users')
