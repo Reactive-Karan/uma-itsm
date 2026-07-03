@@ -4,6 +4,7 @@ import type {
 } from '@/types/database.types'
 import { resolveRouting } from './routing.service'
 import { calcAckDeadline } from '@/lib/ticket/sla'
+import { tmplTicketReceived } from '@/lib/email/templates'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,13 +93,22 @@ export async function createTicket(
     .single()
 
   if (requester) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     await supabase.from('notifications').insert({
       notification_type: 'ticket_received',
       recipient_id: requesterId,
       recipient_email: requester.email,
       ticket_id: ticket.id,
-      subject: `[${ticket.ticket_number}] Your request has been received`,
-      body_html: `Hi ${requester.full_name},<br><br>Your ticket <strong>${ticket.ticket_number}</strong> has been received and will be reviewed shortly.<br><br>Title: ${ticket.title}`,
+      subject: `[${ticket.ticket_number}] Your request has been received — UMA ITSM`,
+      body_html: tmplTicketReceived({
+        ticketNumber: ticket.ticket_number,
+        title: ticket.title,
+        requestType: ticket.request_type.replace('_', ' '),
+        priority: ticket.priority,
+        requesterName: requester.full_name,
+        recipientName: requester.full_name,
+        appUrl,
+      }),
     })
   }
 

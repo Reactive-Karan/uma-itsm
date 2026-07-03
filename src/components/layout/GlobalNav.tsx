@@ -1,7 +1,8 @@
 'use client'
 
-import { Menu, Bell } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { UserProfileMenu } from '@/features/auth/components/UserProfileMenu'
+import { NotificationInbox } from '@/features/notifications/components/NotificationInbox'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
@@ -34,17 +35,7 @@ export function GlobalNav({ onMenuClick }: GlobalNavProps) {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Notification bell */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative h-8 w-8 text-slate-600"
-        aria-label="Notifications"
-      >
-        <Bell className="h-4.5 w-4.5" />
-        {/* Unread dot — will be data-driven in Sprint 6 */}
-        <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-      </Button>
+      <NotificationInbox />
 
       <Separator orientation="vertical" className="h-5 mx-1" />
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TicketSubmitForm } from '@/features/tickets/components/TicketSubmitForm'
+import { DraftRecoveryBanner } from '@/features/pwa/components/DraftRecoveryBanner'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -37,6 +38,8 @@ export default async function NewTicketPage() {
           Describe your issue and we will route it to the right team automatically.
         </p>
       </div>
+
+      <DraftRecoveryBanner />
 
       {!hasRegion && (
         <div className="mb-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

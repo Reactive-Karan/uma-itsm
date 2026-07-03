@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { getSessionUser, ApiResponse } from '@/lib/auth/guards'
 import { createClient } from '@/lib/supabase/server'
 import { createTicket, listTickets, type TicketListFilters } from '@/services/ticket.service'
+import { writeAuditLog } from '@/services/audit.service'
 
 const CreateTicketSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(150),
@@ -75,6 +76,16 @@ export async function POST(request: Request) {
     console.error('[POST /api/tickets] Create error:', error)
     return ApiResponse.serverError('Failed to create ticket. Please try again.')
   }
+
+  // Write audit log entry (non-blocking)
+  await writeAuditLog(supabase, {
+    eventType: 'ticket.created',
+    actor: user,
+    entityType: 'ticket',
+    entityId: ticket.id,
+    entityRef: ticket.ticket_number,
+    payload: { title: ticket.title, request_type: ticket.request_type, sub_type: ticket.sub_type, priority: ticket.priority },
+  })
 
   return ApiResponse.created(ticket)
 }

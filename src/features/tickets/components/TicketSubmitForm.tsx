@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -8,9 +8,11 @@ import { buttonVariants } from '@/components/ui/button'
 import {
   Monitor, Database, HardDrive, Code2, BarChart2, AlertOctagon,
   Cpu, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Sparkles,
-  Upload, X, FileText, AlertTriangle, Minus, ChevronRight,
+  Upload, X, FileText, AlertTriangle, Minus, WifiOff,
 } from 'lucide-react'
-import type { RequestType, SubType, Priority } from '@/types/database.types'
+import { DuplicateWarningModal } from './DuplicateWarningModal'
+import { useDraftStore } from '@/stores/ticket-draft.store'
+import type { RequestType, SubType, Priority, TicketStatus } from '@/types/database.types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,16 +79,32 @@ const ALLOWED_MIME = [
 export function TicketSubmitForm() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const suggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Persistent draft from localStorage
+  const { draft, setDraft, clearDraft } = useDraftStore()
 
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<FormState>({
-    request_type: null, sub_type: null,
-    title: '', description: '', priority: 'medium',
+    request_type: draft.request_type ?? null,
+    sub_type: draft.sub_type ?? null,
+    title: draft.title ?? '',
+    description: draft.description ?? '',
+    priority: draft.priority ?? 'medium',
   })
   const [files, setFiles] = useState<File[]>([])
   const [fileErrors, setFileErrors] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isOffline, setIsOffline] = useState(false)
+
+  // Duplicate detection states
+  const [duplicates, setDuplicates] = useState<{
+    ticket_id: string; ticket_number: string; title: string
+    status: TicketStatus; rank: number
+  }[]>([])
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+  const [duplicateChecked, setDuplicateChecked] = useState(false)
 
   // AI states
   const [isEnhancing, setIsEnhancing] = useState(false)
@@ -96,6 +114,30 @@ export function TicketSubmitForm() {
     confidence?: { request_type: number; sub_type: number; priority: number }
   } | null>(null)
   const [isClassifying, setIsClassifying] = useState(false)
+
+  // Detect offline status
+  useEffect(() => {
+    setIsOffline(!navigator.onLine)
+    const handleOnline  = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    window.addEventListener('online',  handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online',  handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Persist draft on form change
+  useEffect(() => {
+    setDraft({
+      request_type: form.request_type,
+      sub_type: form.sub_type,
+      title: form.title,
+      description: form.description,
+      priority: form.priority,
+    })
+  }, [form, setDraft])
 
   // ─── Step navigation ──────────────────────────────────────────────────────
 
@@ -119,23 +161,50 @@ export function TicketSubmitForm() {
     setAiSuggestion(null)
   }
 
-  // ─── AI — Suggest category ────────────────────────────────────────────────
+  // ─── AI — Suggest category (debounced auto-trigger) ──────────────────────
 
-  const handleSuggestCategory = async () => {
-    if (!form.title || !form.description) return
+  const handleSuggestCategory = useCallback(async (title: string, description: string) => {
+    if (!title || !description || description.length < 30) return
     setIsClassifying(true)
     try {
       const res = await fetch('/api/ai/suggest-category', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: form.title, description: form.description }),
+        body: JSON.stringify({ title, description }),
       })
       const { data } = await res.json()
       if (data?.suggestion) setAiSuggestion(data.suggestion)
     } catch { /* silent fail */ } finally {
       setIsClassifying(false)
     }
-  }
+  }, [])
+
+  // Trigger suggest after 800ms of inactivity in title or description
+  const scheduleSuggest = useCallback((title: string, description: string) => {
+    if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current)
+    suggestTimerRef.current = setTimeout(() => {
+      handleSuggestCategory(title, description)
+    }, 800)
+  }, [handleSuggestCategory])
+
+  // ─── Duplicate check ─────────────────────────────────────────────────────
+
+  const checkDuplicates = useCallback(async () => {
+    if (!form.title || form.description.length < 20) return false
+    try {
+      const res = await fetch('/api/ai/check-duplicates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, description: form.description }),
+      })
+      const { data } = await res.json()
+      if (data?.duplicates?.length > 0) {
+        setDuplicates(data.duplicates)
+        return true
+      }
+    } catch { /* silent fail */ }
+    return false
+  }, [form.title, form.description])
 
   // ─── AI — Enhance description ─────────────────────────────────────────────
 
@@ -203,6 +272,17 @@ export function TicketSubmitForm() {
 
   const handleSubmit = async () => {
     if (!form.request_type || !form.sub_type) return
+
+    // Run duplicate check once before first submission attempt
+    if (!duplicateChecked) {
+      setDuplicateChecked(true)
+      const hasDuplicates = await checkDuplicates()
+      if (hasDuplicates) {
+        setShowDuplicateModal(true)
+        return
+      }
+    }
+
     setIsSubmitting(true)
     setSubmitError(null)
 
@@ -225,6 +305,9 @@ export function TicketSubmitForm() {
         return
       }
 
+      // Clear draft on successful submission
+      clearDraft()
+
       const ticketId = json.data?.id
       if (ticketId) {
         router.push(`/requester/tickets/${ticketId}?submitted=true`)
@@ -238,10 +321,34 @@ export function TicketSubmitForm() {
     }
   }
 
+  // Proceed after duplicate modal — bypass the duplicate check
+  const handleProceedDespiteDuplicates = () => {
+    setShowDuplicateModal(false)
+    setDuplicates([])
+    handleSubmit()
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Duplicate warning modal */}
+      {showDuplicateModal && (
+        <DuplicateWarningModal
+          duplicates={duplicates}
+          onProceed={handleProceedDespiteDuplicates}
+          onDismiss={() => { setShowDuplicateModal(false); setDuplicateChecked(false) }}
+        />
+      )}
+
+      {/* Offline warning */}
+      {isOffline && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          <WifiOff className="h-4 w-4 flex-shrink-0" />
+          <span>You are offline. Your draft is saved locally and will be submitted when you reconnect.</span>
+        </div>
+      )}
+
       {/* Progress steps */}
       <div className="flex items-center gap-2 mb-8">
         {([1, 2, 3, 4] as Step[]).map((s) => (
@@ -367,7 +474,11 @@ export function TicketSubmitForm() {
             <input
               type="text"
               value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              onChange={(e) => {
+                const title = e.target.value
+                setForm((f) => ({ ...f, title }))
+                scheduleSuggest(title, form.description)
+              }}
               placeholder="Brief summary of the issue or request"
               maxLength={150}
               className={cn(
@@ -406,7 +517,11 @@ export function TicketSubmitForm() {
             </div>
             <textarea
               value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              onChange={(e) => {
+                const description = e.target.value
+                setForm((f) => ({ ...f, description }))
+                scheduleSuggest(form.title, description)
+              }}
               placeholder="Describe the issue in detail. Include what happened, when it started, what you have already tried, and the business impact."
               rows={6}
               maxLength={2000}

@@ -91,6 +91,7 @@ export interface Database {
           sla_ack_deadline: string | null; sla_res_deadline: string | null
           sla_paused_at: string | null; sla_paused_minutes: number
           resolution_note: string | null; resolved_at: string | null; closed_at: string | null
+          last_escalated_at: string | null
           created_at: string; updated_at: string
         }
         Insert: {
@@ -103,6 +104,7 @@ export interface Database {
           sla_ack_deadline?: string | null; sla_res_deadline?: string | null
           sla_paused_at?: string | null; sla_paused_minutes?: number
           resolution_note?: string | null; resolved_at?: string | null; closed_at?: string | null
+          last_escalated_at?: string | null
           created_at?: string; updated_at?: string
         }
         Update: {
@@ -112,6 +114,7 @@ export interface Database {
           sla_ack_deadline?: string | null; sla_res_deadline?: string | null
           sla_paused_at?: string | null; sla_paused_minutes?: number
           resolution_note?: string | null; resolved_at?: string | null; closed_at?: string | null
+          last_escalated_at?: string | null
         }
         Relationships: [
           { foreignKeyName: 'tickets_requester_fk'; columns: ['requester_id']; isOneToOne: false; referencedRelation: 'users'; referencedColumns: ['id'] },
@@ -162,22 +165,96 @@ export interface Database {
           { foreignKeyName: 'attachments_ticket_fk'; columns: ['ticket_id']; isOneToOne: false; referencedRelation: 'tickets'; referencedColumns: ['id'] }
         ]
       }
+      business_hours: {
+        Row: {
+          id: string; region_id: string
+          work_mon: boolean; work_tue: boolean; work_wed: boolean; work_thu: boolean
+          work_fri: boolean; work_sat: boolean; work_sun: boolean
+          start_time: string; end_time: string; updated_at: string
+        }
+        Insert: {
+          id?: string; region_id: string
+          work_mon?: boolean; work_tue?: boolean; work_wed?: boolean; work_thu?: boolean
+          work_fri?: boolean; work_sat?: boolean; work_sun?: boolean
+          start_time?: string; end_time?: string; updated_at?: string
+        }
+        Update: {
+          work_mon?: boolean; work_tue?: boolean; work_wed?: boolean; work_thu?: boolean
+          work_fri?: boolean; work_sat?: boolean; work_sun?: boolean
+          start_time?: string; end_time?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'biz_hours_region_fk'; columns: ['region_id']; isOneToOne: true; referencedRelation: 'regions'; referencedColumns: ['id'] }
+        ]
+      }
+      holidays: {
+        Row: { id: string; region_id: string; holiday_date: string; label: string; created_at: string }
+        Insert: { id?: string; region_id: string; holiday_date: string; label: string; created_at?: string }
+        Update: { label?: string }
+        Relationships: [
+          { foreignKeyName: 'holidays_region_fk'; columns: ['region_id']; isOneToOne: false; referencedRelation: 'regions'; referencedColumns: ['id'] }
+        ]
+      }
+      audit_log: {
+        Row: {
+          id: string; event_type: string
+          actor_id: string | null; actor_name: string; actor_role: string
+          entity_type: string; entity_id: string; entity_ref: string
+          payload: import('./database.types').Json; ip_address: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string; event_type: string
+          actor_id?: string | null; actor_name?: string; actor_role?: string
+          entity_type: string; entity_id: string; entity_ref?: string
+          payload?: import('./database.types').Json; ip_address?: string | null
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          { foreignKeyName: 'audit_actor_fk'; columns: ['actor_id']; isOneToOne: false; referencedRelation: 'users'; referencedColumns: ['id'] }
+        ]
+      }
+      cron_runs: {
+        Row: { job_name: string; last_run: string; last_count: number }
+        Insert: { job_name: string; last_run?: string; last_count?: number }
+        Update: { last_run?: string; last_count?: number }
+        Relationships: []
+      }
+      escalation_events: {
+        Row: {
+          id: string; ticket_id: string
+          escalated_from: string | null; escalated_to: string | null
+          escalation_type: string; miss_duration_minutes: number | null; created_at: string
+        }
+        Insert: {
+          id?: string; ticket_id: string
+          escalated_from?: string | null; escalated_to?: string | null
+          escalation_type: string; miss_duration_minutes?: number | null; created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          { foreignKeyName: 'esc_ticket_fk'; columns: ['ticket_id']; isOneToOne: false; referencedRelation: 'tickets'; referencedColumns: ['id'] }
+        ]
+      }
       notifications: {
         Row: {
           id: string; notification_type: string
           recipient_id: string | null; recipient_email: string
           ticket_id: string | null; subject: string; body_html: string
           status: NotificationStatus; attempt_count: number
-          sent_at: string | null; error_message: string | null; created_at: string
+          sent_at: string | null; error_message: string | null
+          read_at: string | null; created_at: string
         }
         Insert: {
           id?: string; notification_type: string
           recipient_id?: string | null; recipient_email: string
           ticket_id?: string | null; subject: string; body_html?: string
           status?: NotificationStatus; attempt_count?: number
-          sent_at?: string | null; error_message?: string | null; created_at?: string
+          sent_at?: string | null; error_message?: string | null
+          read_at?: string | null; created_at?: string
         }
-        Update: { status?: NotificationStatus; attempt_count?: number; sent_at?: string | null; error_message?: string | null }
+        Update: { status?: NotificationStatus; attempt_count?: number; sent_at?: string | null; error_message?: string | null; read_at?: string | null }
         Relationships: []
       }
     }
@@ -186,6 +263,10 @@ export interface Database {
       fn_current_user_role: { Args: Record<PropertyKey, never>; Returns: UserRole }
       fn_current_user_id: { Args: Record<PropertyKey, never>; Returns: string }
       fn_current_department_id: { Args: Record<PropertyKey, never>; Returns: string | null }
+      fn_find_similar_tickets: {
+        Args: { query_text: string; p_region_id: string; max_results?: number }
+        Returns: Array<{ ticket_id: string; ticket_number: string; title: string; status: TicketStatus; rank: number }>
+      }
     }
     Enums: {
       user_role: UserRole; request_type: RequestType; sub_type: SubType

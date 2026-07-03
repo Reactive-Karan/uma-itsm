@@ -28,11 +28,11 @@ Rules:
 
 /**
  * POST /api/ai/enhance-description
- * Uses OpenAI GPT-4o-mini to improve a ticket description.
- * Degrades gracefully if OPENAI_API_KEY is not configured.
+ * Uses OpenRouter (poolside/laguna-xs-2.1:free) to improve a ticket description.
+ * Degrades gracefully if OPENROUTER_API_KEY is not configured.
  */
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.OPENROUTER_API_KEY) {
     return ApiResponse.ok({ enhanced: null, available: false })
   }
 
@@ -51,7 +51,14 @@ export async function POST(request: Request) {
   const { title, description, request_type, sub_type } = parsed.data
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+        'X-Title': 'UMA ITSM',
+      },
+    })
 
     const userMessage = [
       `Ticket title: ${title}`,
@@ -65,7 +72,7 @@ export async function POST(request: Request) {
       .join('\n')
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'poolside/laguna-xs-2.1:free',
       temperature: 0.3,
       max_tokens: 600,
       messages: [
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
 
     return ApiResponse.ok({ enhanced, available: true })
   } catch (err) {
-    console.error('[AI enhance-description] OpenAI error:', err)
+    console.error('[AI enhance-description] OpenRouter error:', err)
     return ApiResponse.ok({ enhanced: null, available: false })
   }
 }
