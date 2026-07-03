@@ -1,19 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/notification-processor",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/sla-scan",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/auto-close",
-      "schedule": "0 * * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
