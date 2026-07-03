@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { ROLE_DASHBOARD_PATHS } from '@/types/user.types'
 import type { UserRole } from '@/types/user.types'
 import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton'
+import { DemoRoleLoginButtons } from '@/features/auth/components/DemoRoleLoginButtons'
 
 interface LoginPageProps {
   searchParams: Promise<{ redirectTo?: string; error?: string }>
@@ -115,6 +116,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <br />
               Contact IT if you need access.
             </p>
+
+            <DemoRoleLoginButtons />
           </div>
 
           <div className="mt-10 pt-6 border-t border-slate-200">

@@ -20,12 +20,12 @@ const STATUS_TABS: { value: TicketStatus | 'all'; label: string }[] = [
 ]
 
 interface PageProps {
-  searchParams: Promise<{ status?: string; page?: string }>
+  readonly searchParams: Promise<{ status?: string; page?: string }>
 }
 
 export default async function RequesterDashboardPage({ searchParams }: PageProps) {
   const { status = 'all', page: pageStr = '1' } = await searchParams
-  const page = parseInt(pageStr, 10) || 1
+  const page = Number.parseInt(pageStr, 10) || 1
 
   const supabase = await createClient()
   const {
@@ -60,17 +60,27 @@ export default async function RequesterDashboardPage({ searchParams }: PageProps
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Good morning, {firstName}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
+            Good morning, {firstName}
+          </h1>
           <p className="text-slate-500 text-sm mt-0.5">Here&apos;s a summary of your support requests.</p>
         </div>
+        {/* Desktop: full label / Mobile: icon only */}
         <Link
           href="/requester/tickets/new"
-          className={cn(buttonVariants(), 'bg-[#1E40AF] hover:bg-[#1e3a8a] gap-2 hidden sm:flex')}
+          className={cn(buttonVariants(), 'bg-[#1E40AF] hover:bg-[#1e3a8a] gap-2 shrink-0 hidden sm:flex')}
         >
           <PlusCircle className="h-4 w-4" />
           Submit a Ticket
+        </Link>
+        <Link
+          href="/requester/tickets/new"
+          aria-label="Submit a ticket"
+          className={cn(buttonVariants({ size: 'icon' }), 'bg-[#1E40AF] hover:bg-[#1e3a8a] shrink-0 sm:hidden h-10 w-10')}
+        >
+          <PlusCircle className="h-5 w-5" />
         </Link>
       </div>
 

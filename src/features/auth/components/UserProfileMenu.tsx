@@ -43,12 +43,13 @@ export function UserProfileMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          'flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm',
+          'flex items-center gap-2 rounded-lg px-2 text-sm',
+          'h-10 md:h-auto md:py-1.5',   // 44px touch target on mobile
           'hover:bg-slate-100 transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF]',
         )}
       >
-        <Avatar className="h-7 w-7">
+        <Avatar className="h-7 w-7 shrink-0">
           <AvatarFallback className="bg-[#1E40AF] text-white text-xs font-semibold">
             {initials}
           </AvatarFallback>
@@ -58,7 +59,7 @@ export function UserProfileMenu() {
         </span>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="end" className="w-60 max-w-[calc(100vw-1rem)]">
         {/* Base UI requires GroupLabel to live inside a Group */}
         <DropdownMenuGroup>
           <DropdownMenuLabel className="pb-1">

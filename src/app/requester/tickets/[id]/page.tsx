@@ -76,8 +76,8 @@ export default async function TicketDetailPage({ params, searchParams }: PagePro
       </nav>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 px-6 py-5 mb-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="bg-white rounded-xl border border-slate-200 px-4 sm:px-6 py-4 sm:py-5 mb-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="font-mono text-sm text-slate-400">{ticket.ticket_number}</span>
@@ -120,22 +120,22 @@ export default async function TicketDetailPage({ params, searchParams }: PagePro
         {/* Main column */}
         <div className="lg:col-span-2 space-y-4">
           {/* Description */}
-          <div className="bg-white rounded-xl border border-slate-200 px-6 py-5">
+          <div className="bg-white rounded-xl border border-slate-200 px-4 sm:px-6 py-4 sm:py-5">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Description</h2>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed break-words">
               {ticket.description}
             </p>
           </div>
 
           {/* Activity Timeline */}
-          <div className="bg-white rounded-xl border border-slate-200 px-6 py-5">
+          <div className="bg-white rounded-xl border border-slate-200 px-4 sm:px-6 py-4 sm:py-5">
             <h2 className="text-sm font-semibold text-slate-700 mb-4">Activity Timeline</h2>
             <ActivityTimeline entries={timeline as Parameters<typeof ActivityTimeline>[0]['entries']} />
           </div>
 
           {/* Add comment */}
           {ticket.status !== 'closed' && (
-            <div className="bg-white rounded-xl border border-slate-200 px-6 py-5">
+            <div className="bg-white rounded-xl border border-slate-200 px-4 sm:px-6 py-4 sm:py-5">
               <h2 className="text-sm font-semibold text-slate-700 mb-3">
                 {isStaff ? 'Add Reply or Note' : 'Add Reply'}
               </h2>

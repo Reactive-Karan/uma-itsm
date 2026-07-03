@@ -99,9 +99,17 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() =>
-          caches.match(request).then(
-            (cached) => cached ?? caches.match(OFFLINE_URL)
-          )
+          caches.match(request).then((cached) => {
+            if (cached) return cached
+            // Only show the offline page when the device is genuinely offline.
+            // If the device is online but the server failed (cold-start, transient
+            // error, auth-redirect loop), return a 503 and let the browser retry.
+            if (!navigator.onLine) return caches.match(OFFLINE_URL)
+            return new Response(
+              '<!doctype html><html><body><p>Service temporarily unavailable. Please refresh.</p></body></html>',
+              { status: 503, headers: { 'Content-Type': 'text/html' } },
+            )
+          })
         )
     )
     return

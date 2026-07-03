@@ -58,18 +58,25 @@ export function NotificationInbox() {
     return () => clearInterval(interval)
   }, [fetchNotifications])
 
-  // Close on outside click
+  // Close on outside click or touch (mobile-safe)
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleOutside(e: MouseEvent | TouchEvent) {
+      const target = (e as TouchEvent).touches
+        ? (e as TouchEvent).touches[0]?.target
+        : (e as MouseEvent).target
       if (
-        panelRef.current && !panelRef.current.contains(e.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+        panelRef.current && !panelRef.current.contains(target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(target as Node)
       ) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+    }
   }, [])
 
   async function markAsRead(id: string) {
@@ -87,11 +94,11 @@ export function NotificationInbox() {
 
   return (
     <div className="relative">
-      {/* Bell button */}
+      {/* Bell button — 44px touch target on mobile for PWA compliance */}
       <button
         ref={buttonRef}
         onClick={() => { setOpen((o) => !o); if (!open) fetchNotifications() }}
-        className="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 transition-colors"
+        className="relative flex h-10 w-10 md:h-8 md:w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 transition-colors"
         aria-label="Notifications"
       >
         <Bell className="h-4.5 w-4.5" />
@@ -102,11 +109,20 @@ export function NotificationInbox() {
         )}
       </button>
 
-      {/* Inbox panel */}
+      {/* Inbox panel
+          Mobile:  fixed to viewport, full-width with safe gutters, pinned below nav (top-16)
+          Desktop: absolute dropdown anchored to the bell button (right-0 top-10 w-80)
+      */}
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 top-10 z-50 w-80 rounded-xl border border-slate-200 bg-white shadow-xl"
+          className={[
+            'z-50 rounded-xl border border-slate-200 bg-white shadow-xl',
+            // Mobile: fixed so it never clips outside the viewport
+            'fixed left-2 right-2 top-[60px]',
+            // Desktop: classic dropdown
+            'md:absolute md:left-auto md:right-0 md:top-10 md:w-80',
+          ].join(' ')}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
@@ -133,8 +149,8 @@ export function NotificationInbox() {
             </div>
           </div>
 
-          {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          {/* List — constrained height so it never overflows the screen on any device */}
+          <div className="max-h-[55vh] md:max-h-80 overflow-y-auto divide-y divide-slate-100">
             {isLoading && (
               <div className="py-6 text-center text-xs text-slate-400">Loading…</div>
             )}
@@ -147,17 +163,20 @@ export function NotificationInbox() {
             {notifications.map((n) => (
               <div
                 key={n.id}
+                role="button"
+                tabIndex={0}
                 className={cn(
                   'flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50',
-                  !n.read_at && 'bg-blue-50 hover:bg-blue-50/80',
+                  n.read_at ? '' : 'bg-blue-50 hover:bg-blue-50/80',
                 )}
                 onClick={() => { if (!n.read_at) markAsRead(n.id) }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!n.read_at) markAsRead(n.id) } }}
               >
-                <span className="text-lg flex-shrink-0 mt-0.5">
+                <span className="text-lg shrink-0 mt-0.5">
                   {TYPE_ICONS[n.notification_type] ?? TYPE_ICONS.default}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-xs leading-snug', !n.read_at ? 'font-semibold text-slate-900' : 'text-slate-700')}>
+                  <p className={cn('text-xs leading-snug wrap-break-word', n.read_at ? 'text-slate-700' : 'font-semibold text-slate-900')}>
                     {n.subject}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(n.created_at)}</p>
@@ -166,13 +185,13 @@ export function NotificationInbox() {
                   <Link
                     href={`/requester/tickets/${n.ticket_id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 mt-0.5"
+                    className="shrink-0 mt-0.5"
                   >
                     <Ticket className="h-3.5 w-3.5 text-slate-400 hover:text-[#1E40AF]" />
                   </Link>
                 )}
-                {!n.read_at && (
-                  <div className="h-2 w-2 rounded-full bg-[#1E40AF] flex-shrink-0 mt-1.5" />
+                {n.read_at ? null : (
+                  <div className="h-2 w-2 rounded-full bg-[#1E40AF] shrink-0 mt-1.5" />
                 )}
               </div>
             ))}

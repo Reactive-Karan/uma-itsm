@@ -9,8 +9,8 @@ import { createClient } from '@/lib/supabase/client'
 import type { UserProfile } from '@/types/user.types'
 
 interface DashboardShellProps {
-  children: React.ReactNode
-  initialProfile?: UserProfile | null
+  readonly children: React.ReactNode
+  readonly initialProfile?: UserProfile | null
 }
 
 /**
@@ -68,7 +68,8 @@ export function DashboardShell({ children, initialProfile }: DashboardShellProps
 
       {/* Main content — offset for fixed navbar (56px) and desktop sidebar (256px) */}
       <main className="pt-14 md:pl-64">
-        <div className="p-6">{children}</div>
+        {/* Responsive padding: tighter on mobile, comfortable on desktop */}
+        <div className="p-4 sm:p-5 md:p-6">{children}</div>
       </main>
     </div>
   )
