@@ -57,22 +57,25 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Next.js internals — Network First so JS module chunks are never stale.
-  // /_next/static/ assets have content hashes in production, so they are
-  // safe to cache; but dev-mode chunks share the same URL across builds and
-  // MUST be re-fetched to avoid "module factory not available" crashes when
-  // source files change. Caching them as a fallback is still fine for offline.
+  // Next.js static chunks — Cache First.
+  // In production (Vercel) all /_next/static/ URLs contain a content hash,
+  // so a changed file always gets a new URL and a cache miss. This makes
+  // Cache First safe and enables full offline support for previously-visited
+  // pages. In local dev, do a hard-reload (Cmd+Shift+R) after code changes
+  // to clear the stale chunk — or bump CACHE_VERSION to evict everything.
   if (url.pathname.startsWith('/_next/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
+      caches.match(request).then(
+        (cached) => cached ?? fetch(request).then((response) => {
           if (response.ok) {
             const clone = response.clone()
             caches.open(STATIC_CACHE).then((c) => c.put(request, clone))
           }
           return response
-        })
-        .catch(() => caches.match(request))
+        }).catch(() =>
+          new Response('', { status: 503, statusText: 'Service Unavailable' })
+        )
+      )
     )
     return
   }
