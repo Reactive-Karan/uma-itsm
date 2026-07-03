@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/features/tickets/components/StatusBadge'
-import { Users, UserCheck, UserX, Clock } from 'lucide-react'
+import { Users, UserCheck, UserX } from 'lucide-react'
 
 export const metadata = { title: 'Team' }
 
@@ -77,11 +77,7 @@ export default async function ManagerTeamPage() {
           <span className="text-xs text-slate-400 ml-auto">Sorted by open ticket count</span>
         </div>
 
-        {!teamMembers?.length ? (
-          <div className="py-12 text-center text-sm text-slate-400">
-            No department users found.
-          </div>
-        ) : (
+        {teamMembers?.length ? (
           <div className="divide-y divide-slate-100">
             {(teamMembers ?? [])
               .sort((a, b) => (ticketsByMember.get(b.id)?.length ?? 0) - (ticketsByMember.get(a.id)?.length ?? 0))
@@ -102,7 +98,7 @@ export default async function ManagerTeamPage() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-slate-900 truncate max-w-[200px]">{member.full_name}</p>
+                          <p className="text-sm font-semibold text-slate-900 wrap-break-word">{member.full_name}</p>
                           {member.is_ooo && (
                             <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0">
                               OOO{member.ooo_end_date ? ` until ${member.ooo_end_date}` : ''}
@@ -112,7 +108,7 @@ export default async function ManagerTeamPage() {
                             <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px] shrink-0">Inactive</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 truncate">{member.email}</p>
+                        <p className="text-xs text-slate-400 break-all">{member.email}</p>
 
                         {/* Ticket mini-list */}
                         {tickets.length > 0 ? (
@@ -151,6 +147,10 @@ export default async function ManagerTeamPage() {
                   </div>
                 )
               })}
+          </div>
+        ) : (
+          <div className="py-12 text-center text-sm text-slate-400">
+            No department users found.
           </div>
         )}
       </div>

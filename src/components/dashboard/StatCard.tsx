@@ -3,15 +3,15 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 
 interface StatCardProps {
-  label: string
-  value?: string | number
-  description?: string
-  icon: LucideIcon
-  iconColor?: string
-  iconBg?: string
-  trend?: { value: string; positive: boolean }
-  isLoading?: boolean
-  className?: string
+  readonly label: string
+  readonly value?: string | number
+  readonly description?: string
+  readonly icon: LucideIcon
+  readonly iconColor?: string
+  readonly iconBg?: string
+  readonly trend?: { value: string; positive: boolean }
+  readonly isLoading?: boolean
+  readonly className?: string
 }
 
 export function StatCard({
@@ -32,12 +32,12 @@ export function StatCard({
         className,
       )}
     >
-      <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0', iconBg)}>
+      <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center shrink-0', iconBg)}>
         <Icon className={cn('h-5 w-5', iconColor)} />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide truncate">{label}</p>
+        <p className="text-[11px] font-semibold text-slate-500 uppercase leading-tight">{label}</p>
 
         {isLoading ? (
           <>
@@ -50,7 +50,7 @@ export function StatCard({
               {value ?? '—'}
             </p>
             {description && (
-              <p className="text-xs text-slate-500 mt-1 truncate">{description}</p>
+              <p className="text-xs text-slate-500 mt-1 leading-tight">{description}</p>
             )}
             {trend && (
               <p

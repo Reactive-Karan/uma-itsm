@@ -370,7 +370,7 @@ export default async function ManagerReportsPage() {
                     <span className="text-white text-[11px] font-semibold">{initials}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{m.name}</p>
+                    <p className="text-sm font-medium text-slate-800 wrap-break-word">{m.name}</p>
                     <div className="flex items-center gap-1 mt-1" style={{ height: '6px' }}>
                       {openPct > 0 && (
                         <div className="bg-[#2563EB] h-1.5 rounded-full" style={{ width: `${openPct}%` }} />

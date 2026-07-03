@@ -120,19 +120,20 @@ export default function RequesterNotificationsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-200">
+      <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setFilter(tab.id)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
               filter === tab.id
                 ? 'border-[#1E40AF] text-[#1E40AF]'
                 : 'border-transparent text-slate-500 hover:text-slate-700',
             )}
           >
-            {tab.id === 'all' && <Filter className="h-3.5 w-3.5" />}
+            {tab.id === 'all' && <Filter className="h-3.5 w-3.5 shrink-0" />}
             {tab.label}
             {tab.id === 'unread' && unreadCount > 0 && (
               <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white px-0.5">
