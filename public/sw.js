@@ -6,7 +6,7 @@
  *   - API calls (/api/*)                       → Network Only  (never serve stale data)
  */
 
-const CACHE_VERSION = 'uma-itsm-v1'
+const CACHE_VERSION = 'uma-itsm-v2'
 const STATIC_CACHE  = `${CACHE_VERSION}-static`
 const PAGES_CACHE   = `${CACHE_VERSION}-pages`
 const OFFLINE_URL   = '/offline'
@@ -57,16 +57,22 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Next.js internals — let the browser handle
+  // Next.js internals — Network First so JS module chunks are never stale.
+  // /_next/static/ assets have content hashes in production, so they are
+  // safe to cache; but dev-mode chunks share the same URL across builds and
+  // MUST be re-fetched to avoid "module factory not available" crashes when
+  // source files change. Caching them as a fallback is still fine for offline.
   if (url.pathname.startsWith('/_next/')) {
     event.respondWith(
-      caches.match(request).then((cached) => cached ?? fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone()
-          caches.open(STATIC_CACHE).then((c) => c.put(request, clone))
-        }
-        return response
-      }))
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(STATIC_CACHE).then((c) => c.put(request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(request))
     )
     return
   }
