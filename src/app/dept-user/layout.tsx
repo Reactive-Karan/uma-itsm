@@ -18,7 +18,7 @@ export default async function DeptUserLayout({ children }: { children: React.Rea
     .single()
 
   if (!profile || !profile.is_active) redirect('/login?error=unauthorized')
-  if (!['dept_user', 'super_admin'].includes(profile.role)) redirect('/unauthorized')
+  if (!['dept_user', 'manager', 'super_admin'].includes(profile.role)) redirect('/unauthorized')
 
   return (
     <DashboardShell initialProfile={profile as UserProfile}>

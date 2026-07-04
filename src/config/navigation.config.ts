@@ -20,6 +20,7 @@ export const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   ],
   manager: [
     { label: 'Department Overview', href: '/manager/dashboard', icon: 'LayoutDashboard' },
+    { label: 'All Tickets', href: '/dept-user/tickets', icon: 'Ticket' },
     { label: 'Escalations', href: '/manager/escalations', icon: 'AlertTriangle' },
     { label: 'Team', href: '/manager/team', icon: 'Users' },
     { label: 'Reports', href: '/manager/reports', icon: 'BarChart2' },
