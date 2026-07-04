@@ -42,9 +42,8 @@ export async function createTicket(
   regionId: string,
   dto: CreateTicketDto,
 ): Promise<{ ticket: TicketRow; error: string | null }> {
-  // Resolve assignee via routing engine
+  // Resolve assignee via routing engine (uses service client internally — bypasses RLS)
   const { assigneeId, departmentId } = await resolveRouting(
-    supabase,
     regionId,
     dto.request_type,
     dto.sub_type,

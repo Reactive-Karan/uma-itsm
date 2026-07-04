@@ -6,15 +6,30 @@ import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { Search, Download } from 'lucide-react'
 
-const EVENT_TYPES = [
-  'ticket.created', 'ticket.status_changed', 'ticket.escalated', 'ticket.resolved',
-  'ticket.closed', 'ticket.reassigned', 'ticket.comment_added',
-  'user.created', 'user.role_changed', 'user.deactivated',
-  'routing_rule.created', 'routing_rule.updated',
-  'sla_config.updated', 'holiday.added',
+const EVENT_TYPES: { value: string; label: string }[] = [
+  { value: 'ticket.created',        label: 'Ticket Created' },
+  { value: 'ticket.status_changed', label: 'Status Changed' },
+  { value: 'ticket.escalated',      label: 'Escalated' },
+  { value: 'ticket.resolved',       label: 'Resolved' },
+  { value: 'ticket.closed',         label: 'Closed' },
+  { value: 'ticket.reassigned',     label: 'Reassigned' },
+  { value: 'ticket.comment_added',  label: 'Comment Added' },
+  { value: 'ticket.acknowledged',   label: 'Acknowledged' },
+  { value: 'user.created',          label: 'User Created' },
+  { value: 'user.role_changed',     label: 'Role Changed' },
+  { value: 'user.deactivated',      label: 'User Deactivated' },
+  { value: 'routing_rule.created',  label: 'Routing Rule Created' },
+  { value: 'routing_rule.updated',  label: 'Routing Rule Updated' },
+  { value: 'sla_config.updated',    label: 'SLA Config Updated' },
+  { value: 'holiday.added',         label: 'Holiday Added' },
 ]
 
-const ENTITY_TYPES = ['ticket', 'user', 'routing_rule', 'sla_config']
+const ENTITY_TYPES: { value: string; label: string }[] = [
+  { value: 'ticket',       label: 'Ticket' },
+  { value: 'user',         label: 'User' },
+  { value: 'routing_rule', label: 'Routing Rule' },
+  { value: 'sla_config',   label: 'SLA Config' },
+]
 
 export function AuditFilters() {
   const router = useRouter()
@@ -56,7 +71,7 @@ export function AuditFilters() {
           <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Event Type</label>
           <select value={eventType} onChange={(e) => setEventType(e.target.value)} className={selectCls}>
             <option value="">All Events</option>
-            {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
 
@@ -64,7 +79,7 @@ export function AuditFilters() {
           <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Entity Type</label>
           <select value={entityType} onChange={(e) => setEntityType(e.target.value)} className={selectCls}>
             <option value="">All Entities</option>
-            {ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {ENTITY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
 

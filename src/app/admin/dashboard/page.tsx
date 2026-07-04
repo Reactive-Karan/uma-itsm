@@ -14,6 +14,24 @@ import type { TicketStatus } from '@/types/database.types'
 
 export const metadata = { title: 'Platform Overview' }
 
+const AUDIT_EVENT_LABELS: Record<string, string> = {
+  'ticket.created':          'Ticket Created',
+  'ticket.status_changed':   'Status Changed',
+  'ticket.escalated':        'Escalated',
+  'ticket.resolved':         'Resolved',
+  'ticket.closed':           'Closed',
+  'ticket.reassigned':       'Reassigned',
+  'ticket.comment_added':    'Comment Added',
+  'ticket.acknowledged':     'Acknowledged',
+  'user.created':            'User Created',
+  'user.role_changed':       'Role Changed',
+  'user.deactivated':        'User Deactivated',
+  'routing_rule.created':    'Routing Rule Created',
+  'routing_rule.updated':    'Routing Rule Updated',
+  'sla_config.updated':      'SLA Config Updated',
+  'holiday.added':           'Holiday Added',
+}
+
 const REGIONS = [
   { code: 'KE', name: 'Nairobi',        color: 'bg-blue-500' },
   { code: 'NG', name: 'Lagos',          color: 'bg-indigo-500' },
@@ -239,7 +257,7 @@ export default async function AdminDashboardPage() {
                   <Activity className="h-3.5 w-3.5 text-slate-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-800 truncate">{e.event_type}</p>
+                  <p className="text-xs font-medium text-slate-800 truncate">{AUDIT_EVENT_LABELS[e.event_type] ?? e.event_type}</p>
                   <p className="text-[10px] text-slate-400">
                     by {e.actor_name}
                     {e.entity_ref ? ` · ${e.entity_ref}` : ''}

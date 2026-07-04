@@ -4,13 +4,18 @@
 --
 -- PRE-REQUISITES:
 --   1. All sprint migrations must be applied first.
---   2. Create 4 demo accounts in Supabase Dashboard →
+--   2. Create 6 demo accounts in Supabase Dashboard →
 --      Authentication → Users → Add user (Email + Password):
 --
---        demo.requester@uma-itsm.demo  / UmaDemo@2026!
---        demo.deptuser@uma-itsm.demo   / UmaDemo@2026!
---        demo.manager@uma-itsm.demo    / UmaDemo@2026!
---        demo.admin@uma-itsm.demo      / UmaDemo@2026!
+--        demo.requester@uma-itsm.demo     / UmaDemo@2026!   (Requester)
+--        demo.deptuser@uma-itsm.demo      / UmaDemo@2026!   (Primary IT Agent — Chidi Nwosu)
+--        demo.backup@uma-itsm.demo        / UmaDemo@2026!   (Backup IT Agent — Ngozi Adeyemi)
+--        demo.dataanalyst@uma-itsm.demo   / UmaDemo@2026!   (Data Analytics Agent — Kwame Mensah)
+--        demo.manager@uma-itsm.demo       / UmaDemo@2026!   (Manager)
+--        demo.admin@uma-itsm.demo         / UmaDemo@2026!   (Super Admin)
+--
+--   NOTE: demo.backup and demo.dataanalyst are required for OOO routing,
+--   backup assignee coverage, and the colleague picker in OOO settings.
 --
 -- IDEMPOTENT: safe to re-run — clears and rebuilds demo data each time.
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -67,42 +72,50 @@ END $$;
 DO $$
 DECLARE
   -- auth IDs
-  v_req_auth   UUID;
-  v_dept_auth  UUID;
-  v_mgr_auth   UUID;
-  v_adm_auth   UUID;
+  v_req_auth    UUID;
+  v_dept_auth   UUID;
+  v_backup_auth UUID;
+  v_data_auth   UUID;
+  v_mgr_auth    UUID;
+  v_adm_auth    UUID;
   -- profile IDs
-  v_req_id     UUID;
-  v_dept_id    UUID;
-  v_mgr_id     UUID;
-  v_adm_id     UUID;
+  v_req_id      UUID;
+  v_dept_id     UUID;
+  v_backup_id   UUID;
+  v_data_id_usr UUID;
+  v_mgr_id      UUID;
+  v_adm_id      UUID;
   -- lookup IDs
-  v_ke_id      UUID;
-  v_ng_id      UUID;
-  v_za_id      UUID;
-  v_hw_id      UUID;
-  v_sw_id      UUID;
-  v_data_id    UUID;
+  v_ke_id       UUID;
+  v_ng_id       UUID;
+  v_za_id       UUID;
+  v_hw_id       UUID;
+  v_sw_id       UUID;
+  v_data_id     UUID;
   -- ticket ID vars
-  v_tkt1       UUID;
-  v_tkt2       UUID;
-  v_tkt3       UUID;
-  v_tkt4       UUID;
-  v_tkt5       UUID;
-  v_tkt6       UUID;
-  v_tkt7       UUID;
+  v_tkt1        UUID;
+  v_tkt2        UUID;
+  v_tkt3        UUID;
+  v_tkt4        UUID;
+  v_tkt5        UUID;
+  v_tkt6        UUID;
+  v_tkt7        UUID;
 BEGIN
 
   -- ── 1. Resolve auth.users IDs ───────────────────────────────────────────────
-  SELECT id INTO v_req_auth  FROM auth.users WHERE email = 'demo.requester@uma-itsm.demo';
-  SELECT id INTO v_dept_auth FROM auth.users WHERE email = 'demo.deptuser@uma-itsm.demo';
-  SELECT id INTO v_mgr_auth  FROM auth.users WHERE email = 'demo.manager@uma-itsm.demo';
-  SELECT id INTO v_adm_auth  FROM auth.users WHERE email = 'demo.admin@uma-itsm.demo';
+  SELECT id INTO v_req_auth    FROM auth.users WHERE email = 'demo.requester@uma-itsm.demo';
+  SELECT id INTO v_dept_auth   FROM auth.users WHERE email = 'demo.deptuser@uma-itsm.demo';
+  SELECT id INTO v_backup_auth FROM auth.users WHERE email = 'demo.backup@uma-itsm.demo';
+  SELECT id INTO v_data_auth   FROM auth.users WHERE email = 'demo.dataanalyst@uma-itsm.demo';
+  SELECT id INTO v_mgr_auth    FROM auth.users WHERE email = 'demo.manager@uma-itsm.demo';
+  SELECT id INTO v_adm_auth    FROM auth.users WHERE email = 'demo.admin@uma-itsm.demo';
 
-  IF v_req_auth  IS NULL THEN RAISE EXCEPTION 'demo.requester@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
-  IF v_dept_auth IS NULL THEN RAISE EXCEPTION 'demo.deptuser@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
-  IF v_mgr_auth  IS NULL THEN RAISE EXCEPTION 'demo.manager@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
-  IF v_adm_auth  IS NULL THEN RAISE EXCEPTION 'demo.admin@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_req_auth    IS NULL THEN RAISE EXCEPTION 'demo.requester@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_dept_auth   IS NULL THEN RAISE EXCEPTION 'demo.deptuser@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_backup_auth IS NULL THEN RAISE EXCEPTION 'demo.backup@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_data_auth   IS NULL THEN RAISE EXCEPTION 'demo.dataanalyst@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_mgr_auth    IS NULL THEN RAISE EXCEPTION 'demo.manager@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
+  IF v_adm_auth    IS NULL THEN RAISE EXCEPTION 'demo.admin@uma-itsm.demo not in auth.users — add it via Supabase Dashboard → Authentication → Users'; END IF;
 
   -- ── 2. Resolve reference IDs ────────────────────────────────────────────────
   SELECT id INTO v_ke_id   FROM public.regions     WHERE code = 'KE';
@@ -119,11 +132,26 @@ BEGIN
     SET full_name = 'Amara Osei', role = 'requester', region_id = v_ke_id, is_active = TRUE;
   SELECT id INTO v_req_id FROM public.users WHERE auth_id = v_req_auth;
 
+  -- Primary IT/HW support agent
   INSERT INTO public.users (auth_id, email, full_name, role, region_id, department_id, is_active)
   VALUES (v_dept_auth, 'demo.deptuser@uma-itsm.demo', 'Chidi Nwosu', 'dept_user', v_ke_id, v_hw_id, TRUE)
   ON CONFLICT (auth_id) DO UPDATE
     SET full_name = 'Chidi Nwosu', role = 'dept_user', region_id = v_ke_id, department_id = v_hw_id, is_active = TRUE;
   SELECT id INTO v_dept_id FROM public.users WHERE auth_id = v_dept_auth;
+
+  -- Backup IT/HW+SW support agent (covers OOO for Chidi; can test backup routing)
+  INSERT INTO public.users (auth_id, email, full_name, role, region_id, department_id, is_active)
+  VALUES (v_backup_auth, 'demo.backup@uma-itsm.demo', 'Ngozi Adeyemi', 'dept_user', v_ke_id, v_hw_id, TRUE)
+  ON CONFLICT (auth_id) DO UPDATE
+    SET full_name = 'Ngozi Adeyemi', role = 'dept_user', region_id = v_ke_id, department_id = v_hw_id, is_active = TRUE;
+  SELECT id INTO v_backup_id FROM public.users WHERE auth_id = v_backup_auth;
+
+  -- Primary Data Analytics agent (covers data_service tickets)
+  INSERT INTO public.users (auth_id, email, full_name, role, region_id, department_id, is_active)
+  VALUES (v_data_auth, 'demo.dataanalyst@uma-itsm.demo', 'Kwame Mensah', 'dept_user', v_ke_id, v_data_id, TRUE)
+  ON CONFLICT (auth_id) DO UPDATE
+    SET full_name = 'Kwame Mensah', role = 'dept_user', region_id = v_ke_id, department_id = v_data_id, is_active = TRUE;
+  SELECT id INTO v_data_id_usr FROM public.users WHERE auth_id = v_data_auth;
 
   INSERT INTO public.users (auth_id, email, full_name, role, region_id, department_id, is_active)
   VALUES (v_mgr_auth, 'demo.manager@uma-itsm.demo', 'Fatima Al-Rashid', 'manager', v_ke_id, v_hw_id, TRUE)
@@ -137,20 +165,27 @@ BEGIN
     SET full_name = 'Jomo Kariuki', role = 'super_admin', region_id = v_ke_id, is_active = TRUE;
   SELECT id INTO v_adm_id FROM public.users WHERE auth_id = v_adm_auth;
 
-  RAISE NOTICE '✓ Users: req=% dept=% mgr=% adm=%', v_req_id, v_dept_id, v_mgr_id, v_adm_id;
+  RAISE NOTICE '✓ Users: req=% dept=% backup=% data=% mgr=% adm=%',
+    v_req_id, v_dept_id, v_backup_id, v_data_id_usr, v_mgr_id, v_adm_id;
 
-  -- ── 4. Routing rules ────────────────────────────────────────────────────────
-  INSERT INTO public.routing_rules (region_id, request_type, sub_type, primary_assignee_id, is_active)
+  -- ── 4. Routing rules — with backup assignees ────────────────────────────────
+  -- IT Hardware: primary = Chidi, backup = Ngozi
+  -- IT Software: primary = Chidi, backup = Ngozi
+  -- Data services: primary = Kwame, backup = Chidi (cross-cover)
+  INSERT INTO public.routing_rules (region_id, request_type, sub_type, primary_assignee_id, backup_assignee_id, is_active)
   VALUES
-    (v_ke_id, 'it_service',   'hardware',    v_dept_id, TRUE),
-    (v_ke_id, 'it_service',   'software',    v_dept_id, TRUE),
-    (v_ke_id, 'data_service', 'analysis',    v_dept_id, TRUE),
-    (v_ke_id, 'data_service', 'discrepancy', v_dept_id, TRUE),
-    (v_ke_id, 'data_service', 'issues',      v_dept_id, TRUE)
+    (v_ke_id, 'it_service',   'hardware',    v_dept_id,     v_backup_id,  TRUE),
+    (v_ke_id, 'it_service',   'software',    v_dept_id,     v_backup_id,  TRUE),
+    (v_ke_id, 'data_service', 'analysis',    v_data_id_usr, v_dept_id,    TRUE),
+    (v_ke_id, 'data_service', 'discrepancy', v_data_id_usr, v_dept_id,    TRUE),
+    (v_ke_id, 'data_service', 'issues',      v_data_id_usr, v_dept_id,    TRUE)
   ON CONFLICT (region_id, request_type, sub_type)
-  DO UPDATE SET primary_assignee_id = v_dept_id, is_active = TRUE;
+  DO UPDATE SET
+    primary_assignee_id = EXCLUDED.primary_assignee_id,
+    backup_assignee_id  = EXCLUDED.backup_assignee_id,
+    is_active           = TRUE;
 
-  RAISE NOTICE '✓ Routing rules seeded';
+  RAISE NOTICE '✓ Routing rules seeded with backup assignees';
 
   -- ── 5. Clean demo tickets (idempotency) ─────────────────────────────────────
   -- Remove prior notifications and comments tied to demo tickets, then tickets.

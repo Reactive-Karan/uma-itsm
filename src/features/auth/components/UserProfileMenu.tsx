@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSessionStore } from '@/stores/session.store'
 import { RoleBadge } from '@/features/users/components/RoleBadge'
@@ -27,7 +28,9 @@ const PROFILE_PATH_BY_ROLE: Record<UserRole, string> = {
 
 export function UserProfileMenu() {
   const router = useRouter()
+  const [signingOut, setSigningOut] = useState(false)
   const profile = useSessionStore((s) => s.profile)
+  const clearSession = useSessionStore((s) => s.clearSession)
   const profilePath = profile ? PROFILE_PATH_BY_ROLE[profile.role] : '/'
 
   const initials = profile?.full_name
@@ -40,10 +43,15 @@ export function UserProfileMenu() {
     : '??'
 
   async function handleSignOut() {
+    if (signingOut) return
+    setSigningOut(true)
+    // Clear local store immediately so UI reflects signed-out state at once
+    clearSession()
+    // Navigate first — then fire signOut in the background so the user
+    // does not wait for the Supabase network round-trip
+    router.replace('/login')
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    supabase.auth.signOut().catch(() => {/* best-effort */})
   }
 
   if (!profile) return null
@@ -97,10 +105,11 @@ export function UserProfileMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem
             onClick={handleSignOut}
-            className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+            disabled={signingOut}
+            className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50 disabled:opacity-60"
           >
             <LogOut className="h-4 w-4" />
-            Sign Out
+            {signingOut ? 'Signing out…' : 'Sign Out'}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

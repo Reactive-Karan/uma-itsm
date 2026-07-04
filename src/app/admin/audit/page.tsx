@@ -11,15 +11,36 @@ import Link from 'next/link'
 
 export const metadata = { title: 'Audit Log' }
 
+const EVENT_LABELS: Record<string, string> = {
+  'ticket.created':          'Ticket Created',
+  'ticket.status_changed':   'Status Changed',
+  'ticket.escalated':        'Escalated',
+  'ticket.resolved':         'Resolved',
+  'ticket.closed':           'Closed',
+  'ticket.reassigned':       'Reassigned',
+  'ticket.comment_added':    'Comment Added',
+  'ticket.acknowledged':     'Acknowledged',
+  'user.created':            'User Created',
+  'user.role_changed':       'Role Changed',
+  'user.deactivated':        'Deactivated',
+  'routing_rule.created':    'Routing Rule Created',
+  'routing_rule.updated':    'Routing Rule Updated',
+  'sla_config.updated':      'SLA Config Updated',
+  'holiday.added':           'Holiday Added',
+}
+
 const EVENT_COLOURS: Record<string, string> = {
-  'ticket.created':       'bg-blue-50 text-blue-700 border-blue-200',
-  'ticket.status_changed':'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'ticket.escalated':     'bg-red-50 text-red-700 border-red-200',
-  'ticket.resolved':      'bg-green-50 text-green-700 border-green-200',
-  'ticket.closed':        'bg-slate-50 text-slate-600 border-slate-200',
-  'user.created':         'bg-violet-50 text-violet-700 border-violet-200',
-  'user.role_changed':    'bg-amber-50 text-amber-700 border-amber-200',
-  'user.deactivated':     'bg-red-50 text-red-700 border-red-200',
+  'ticket.created':          'bg-blue-50 text-blue-700 border-blue-200',
+  'ticket.status_changed':   'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'ticket.escalated':        'bg-red-50 text-red-700 border-red-200',
+  'ticket.resolved':         'bg-green-50 text-green-700 border-green-200',
+  'ticket.closed':           'bg-slate-50 text-slate-600 border-slate-200',
+  'ticket.reassigned':       'bg-amber-50 text-amber-700 border-amber-200',
+  'ticket.comment_added':    'bg-sky-50 text-sky-700 border-sky-200',
+  'ticket.acknowledged':     'bg-teal-50 text-teal-700 border-teal-200',
+  'user.created':            'bg-violet-50 text-violet-700 border-violet-200',
+  'user.role_changed':       'bg-amber-50 text-amber-700 border-amber-200',
+  'user.deactivated':        'bg-red-50 text-red-700 border-red-200',
 }
 const DEFAULT_EVENT_COLOUR = 'bg-slate-50 text-slate-600 border-slate-200'
 
@@ -110,7 +131,7 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
                         'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
                         EVENT_COLOURS[entry.event_type] ?? DEFAULT_EVENT_COLOUR,
                       )}>
-                        {entry.event_type}
+                        {EVENT_LABELS[entry.event_type] ?? entry.event_type}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">

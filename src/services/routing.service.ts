@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, RequestType, SubType } from '@/types/database.types'
+import type { RequestType, SubType } from '@/types/database.types'
+import { createServiceClient } from '@/lib/supabase/server'
 
 interface ResolvedRoute {
   assigneeId: string | null
@@ -11,14 +11,19 @@ interface ResolvedRoute {
  * 1. Active routing rule for the region + type + sub-type
  * 2. OOO detection — falls back to backup assignee
  * 3. If no rule or no valid assignee: returns nulls (Super Admin assigns manually)
+ *
+ * Uses the service role client so that RLS on routing_rules (admin-only SELECT)
+ * does not block ticket creation by requesters or dept_users.
  */
 export async function resolveRouting(
-  supabase: SupabaseClient<Database>,
   regionId: string,
   requestType: RequestType,
   subType: SubType,
   requesterId: string,
 ): Promise<ResolvedRoute> {
+  // Service client bypasses RLS — routing rule lookup is always privileged
+  const supabase = createServiceClient()
+
   // Look up active routing rule
   const { data: rule } = await supabase
     .from('routing_rules')
@@ -36,7 +41,7 @@ export async function resolveRouting(
 
   if (!rule) return { assigneeId: null, departmentId: null }
 
-  // Determine the lookup type and get the primary user details
+  // Get the primary user details
   const { data: primaryUser } = await supabase
     .from('users')
     .select('id, is_ooo, department_id')
