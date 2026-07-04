@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSessionStore } from '@/stores/session.store'
+
 import { RoleBadge } from '@/features/users/components/RoleBadge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -30,7 +31,6 @@ export function UserProfileMenu() {
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
   const profile = useSessionStore((s) => s.profile)
-  const clearSession = useSessionStore((s) => s.clearSession)
   const profilePath = profile ? PROFILE_PATH_BY_ROLE[profile.role] : '/'
 
   const initials = profile?.full_name
@@ -45,13 +45,14 @@ export function UserProfileMenu() {
   async function handleSignOut() {
     if (signingOut) return
     setSigningOut(true)
-    // Clear local store immediately so UI reflects signed-out state at once
-    clearSession()
-    // Navigate first — then fire signOut in the background so the user
-    // does not wait for the Supabase network round-trip
-    router.replace('/login')
+    // Sign out first (fast — just clears local storage + one network call),
+    // then navigate. Do NOT clear the Zustand store here — doing so sets
+    // profile = null which triggers `if (!profile) return null` and unmounts
+    // this component before router.replace can fire, leaving the UI stuck.
+    // The store is naturally re-initialised when the login page mounts.
     const supabase = createClient()
-    supabase.auth.signOut().catch(() => {/* best-effort */})
+    await supabase.auth.signOut()
+    router.replace('/login')
   }
 
   if (!profile) return null
