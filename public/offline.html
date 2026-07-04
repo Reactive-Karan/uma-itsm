@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1E40AF" />
+  <title>You are offline — UMA ITSM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: #F8FAFC;
+      color: #0F172A;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 1rem;
+      padding: 2.5rem 2rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07);
+    }
+
+    .icon-wrap {
+      width: 72px;
+      height: 72px;
+      background: #1E40AF;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+
+    .icon-wrap svg {
+      width: 36px;
+      height: 36px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 0.625rem;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #64748B;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-box {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-box-title {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    .info-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .info-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .check { color: #22C55E; flex-shrink: 0; margin-top: 1px; }
+    .cross { color: #CBD5E1; flex-shrink: 0; margin-top: 1px; }
+    .cross-text { color: #94A3B8; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 0.625rem 1rem;
+      background: #1E40AF;
+      color: #fff;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn:hover { background: #1e3a8a; }
+
+    .footer {
+      font-size: 0.6875rem;
+      color: #94A3B8;
+      margin-top: 0.5rem;
+    }
+
+    .pulse {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #F59E0B;
+      border-radius: 50%;
+      margin-right: 5px;
+      animation: pulse 1.5s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.75); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <!-- wifi-off icon -->
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <circle cx="12" cy="20" r="1" fill="#fff" stroke="none"></circle>
+      </svg>
+    </div>
+
+    <h1>You are offline</h1>
+    <p class="subtitle">
+      UMA ITSM needs an active connection to load service requests.
+      Reconnect to continue working.
+    </p>
+
+    <div class="info-box">
+      <p class="info-box-title">While offline you can still:</p>
+      <ul class="info-list">
+        <li>
+          <span class="check">✓</span>
+          <span>Draft a new ticket — saved locally until you reconnect</span>
+        </li>
+        <li>
+          <span class="check">✓</span>
+          <span>View recently cached pages and ticket details</span>
+        </li>
+        <li>
+          <span class="cross">✗</span>
+          <span class="cross-text">Submit tickets or add comments (requires connection)</span>
+        </li>
+      </ul>
+    </div>
+
+    <button class="btn" onclick="window.location.reload()">Try Again</button>
+
+    <p class="footer">
+      <span class="pulse"></span>
+      UMA ITSM · Reconnecting automatically when online
+    </p>
+  </div>
+
+  <script>
+    // Auto-reload when connection is restored
+    window.addEventListener('online', function () {
+      window.location.reload()
+    })
+  </script>
+</body>
+</html>
